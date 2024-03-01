@@ -19,11 +19,11 @@ public:
 
     
     Pendulum(sf::Vector2f origin, float length)
-        : origin(origin), length(length), theta(M_PI/4), omega(0), alpha(0), mass(1) {};
+        : origin(origin), length(length), theta(M_PI/2), omega(0), alpha(0), mass(1) {};
 
    
     double acceleration(double angle) const {
-        return (-gravity / length) * std::sin(angle);
+        return (-1*gravity / length) * std::sin(angle);
     }
 
 
@@ -39,9 +39,16 @@ void RK4(double& y, double& dy, double dt, const std::function<double(double)>& 
     dy += dt * f(y);
 }
 
-void updatePendulum(Pendulum& pendulum, double& theta, double& omega, double dt) {
-    RK4(theta, omega, dt, [&pendulum](double theta) -> double {
-        return pendulum.acceleration(theta);
+void updatePendulum(Pendulum& pendulum, double& theta, double& omega,  double dt) {
+    auto omega_dot = -pendulum.gravity / pendulum.length * std::sin(theta);
+    auto theta_dot = omega;
+    //updates angular velocity based on its derivative 
+    RK4(omega, omega_dot, dt, [&pendulum, &theta](double) -> double {
+        return -pendulum.gravity / pendulum.length * std::sin(theta); 
+        });
+
+    RK4(theta, theta_dot, dt, [&pendulum, &omega](double) -> double {
+        return omega; 
         });
 }
 
@@ -60,12 +67,12 @@ int main()
         }
 
         // Update Pendulum
-        double dt = 0.01; // Time step, 
+        double dt = 0.001; // Time step, 
         updatePendulum(pendulum, pendulum.theta, pendulum.omega, dt);
 
         // Draw
         window.clear();
-        sf::CircleShape pendulumBob(10); // Represents the bob, 
+        sf::CircleShape pendulumBob(10); 
         pendulumBob.setFillColor(sf::Color::Red);
         double bobX = pendulum.origin.x + pendulum.length * std::sin(pendulum.theta);
         double bobY = pendulum.origin.y + pendulum.length * std::cos(pendulum.theta);
